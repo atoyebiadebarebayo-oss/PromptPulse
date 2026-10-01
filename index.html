@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PromptPulse — AI Prompt Engineering Workspace</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="logo-area">
+      <div class="logo-icon"><i class="fa-solid fa-terminal"></i></div>
+      <div class="logo-text">
+        <h1>PromptPulse</h1>
+        <span>AI Prompt Engineering & Testbed</span>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <button id="import-btn" class="btn btn-secondary">
+        <i class="fa-solid fa-file-import"></i> Import Library
+      </button>
+      <button id="export-btn" class="btn btn-secondary">
+        <i class="fa-solid fa-file-export"></i> Export Library
+      </button>
+      <button id="theme-toggle-btn" class="btn btn-secondary">
+        <i class="fa-solid fa-moon"></i> <span>Dark Mode</span>
+      </button>
+      <input type="file" id="import-file-input" accept=".json" style="display: none;">
+    </div>
+  </header>
+
+  <!-- Workspace Layout -->
+  <div class="workspace-wrapper">
+
+    <!-- Left Sidebar: Saved Prompt Library -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h3><i class="fa-solid fa-folder-open"></i> Prompt Library</h3>
+        <button id="new-prompt-btn" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-plus"></i> New
+        </button>
+      </div>
+
+      <div class="sidebar-search">
+        <input type="text" id="search-library" placeholder="Search prompts or tags..." class="search-input">
+      </div>
+
+      <div class="prompt-list" id="prompt-list">
+        <!-- Dynamically Populated -->
+      </div>
+    </aside>
+
+    <!-- Main Workspace Area -->
+    <main class="editor-area">
+
+      <!-- Prompt Metadata Bar -->
+      <section class="metadata-bar">
+        <div class="title-input-group">
+          <input type="text" id="prompt-title" placeholder="Prompt Title (e.g., Code Refactor Specialist)..." class="title-field">
+          <input type="text" id="prompt-tags" placeholder="Tags (comma separated: dev, python, system)..." class="tags-field">
+        </div>
+
+        <div class="meta-actions">
+          <button id="save-prompt-btn" class="btn btn-success">
+            <i class="fa-solid fa-floppy-disk"></i> Save Prompt
+          </button>
+          <button id="delete-prompt-btn" class="btn btn-danger">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- Grid Editor Layout -->
+      <div class="editor-grid">
+
+        <!-- Column 1: System & User Prompt Editors -->
+        <div class="editor-pane">
+          
+          <div class="pane-card">
+            <div class="pane-header">
+              <span><i class="fa-solid fa-user-gear"></i> System Instruction</span>
+              <span class="token-count" id="system-token-count">0 Tokens</span>
+            </div>
+            <textarea id="system-prompt" placeholder="Define the AI persona, rules, and boundaries (e.g., 'You are an expert Python developer who writes concise code...')."></textarea>
+          </div>
+
+          <div class="pane-card">
+            <div class="pane-header">
+              <span><i class="fa-solid fa-code"></i> User Template <small>(Use {{variable}} syntax)</small></span>
+              <span class="token-count" id="user-token-count">0 Tokens</span>
+            </div>
+            <textarea id="user-prompt" placeholder="Write the core prompt template. Variables like {{code_snippet}} or {{language}} will auto-generate input fields below."></textarea>
+          </div>
+
+        </div>
+
+        <!-- Column 2: Variables & Model Tuning Parameters -->
+        <div class="controls-pane">
+
+          <!-- Dynamic Variables Card -->
+          <div class="pane-card">
+            <div class="pane-header">
+              <span><i class="fa-solid fa-sliders"></i> Dynamic Variables</span>
+              <span class="badge" id="variable-count-badge">0 Found</span>
+            </div>
+            <div class="variables-container" id="variables-container">
+              <p class="placeholder-text">Type <code>{{variable_name}}</code> in the template to create dynamic input fields.</p>
+            </div>
+          </div>
+
+          <!-- Model Parameter Tuning Card -->
+          <div class="pane-card">
+            <div class="pane-header">
+              <span><i class="fa-solid fa-gears"></i> Parameter Tuning</span>
+            </div>
+            
+            <div class="parameter-group">
+              <div class="param-header">
+                <label for="param-model">Target Model</label>
+              </div>
+              <select id="param-model" class="select-field">
+                <option value="gpt-4o">GPT-4o ($0.005 / 1k tokens)</option>
+                <option value="gpt-4-turbo">GPT-4 Turbo ($0.01 / 1k tokens)</option>
+                <option value="claude-3-5-sonnet">Claude 3.5 Sonnet ($0.003 / 1k tokens)</option>
+                <option value="gemini-1-5-pro">Gemini 1.5 Pro ($0.0025 / 1k tokens)</option>
+              </select>
+            </div>
+
+            <div class="parameter-group">
+              <div class="param-header">
+                <label for="param-temp">Temperature: <strong id="temp-val">0.70</strong></label>
+              </div>
+              <input type="range" id="param-temp" min="0" max="2" step="0.05" value="0.70">
+              <span class="param-hint">Controls randomness (0 = strict/exact, 2 = creative).</span>
+            </div>
+
+            <div class="parameter-group">
+              <div class="param-header">
+                <label for="param-top-p">Top-P: <strong id="topp-val">0.90</strong></label>
+              </div>
+              <input type="range" id="param-top-p" min="0" max="1" step="0.05" value="0.90">
+            </div>
+
+            <div class="parameter-group">
+              <div class="param-header">
+                <label for="param-tokens">Max Output Tokens: <strong id="tokens-val">2048</strong></label>
+              </div>
+              <input type="range" id="param-tokens" min="256" max="8192" step="256" value="2048">
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Output / Compiled Prompt Section -->
+      <section class="output-section">
+        <div class="pane-card">
+          <div class="output-header">
+            <div class="output-title">
+              <h3><i class="fa-solid fa-bolt"></i> Compiled Playground Payload</h3>
+              <span class="cost-badge" id="cost-estimate-badge">Est. Cost: $0.0000</span>
+            </div>
+            <div class="output-actions">
+              <button id="copy-payload-btn" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-copy"></i> Copy Payload
+              </button>
+              <button id="test-run-btn" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-play"></i> Simulate Execution
+              </button>
+            </div>
+          </div>
+
+          <div class="compiled-output-box" id="compiled-output">
+            <!-- Compiled Output Appears Here -->
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
